@@ -27,7 +27,16 @@ main()
         p4 = smalloc(2500) ;
         printf("smalloc(2500)\n") ;
         print_sm_containers() ;
-/*      
+
+	sfree(p3);
+	printf("sfree(%p)\n",p3);
+	print_sm_containers();
+	
+	sfree(p1);
+	printf("sfree(%p)\n",p1);
+	print_sm_containers();
+/*     
+ 
         p5 = smalloc(1000);
         printf("smalloc(1000test)\n");
         print_sm_containers();

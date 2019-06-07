@@ -1,7 +1,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include "smalloc.h" 
-
+#include <stdlib.h>
 sm_container_ptr sm_first = 0x0 ;
 sm_container_ptr sm_last = 0x0 ;
 sm_container_ptr sm_unused_containers = 0x0 ;
@@ -98,34 +98,57 @@ void * smalloc(size_t size)
 	hole->status = Busy ;
 //	printf("%d\n",hole->dsize); allocated memory
 	unusedLink();
+
 	return hole->data ;
 }
 void unusedLink(){
-	sm_container_ptr itr;
+	sm_container_ptr itr =0x0;
 	sm_container_ptr x = 0x0;
-	for(itr = sm_first ; itr->next != 0x0; itr = itr->next){
-		if(itr->status == Unused){
+	for(itr = sm_first ; itr != 0x0; itr = itr->next){
 
-			if(sm_unused_containers == 0x0){
+			if(itr->status == Unused && x == 0x0){
 				sm_unused_containers = itr;
 				x = sm_unused_containers;
 			}
-			else{
-				
-				x->next_unused=itr;
+			else if(itr->status == Unused && x != 0x0){
+				x->next_unused = itr;	
 				x = x->next_unused;
-
-				}	
+			
+				
+				
+				}
+				
 		}
+	/*for(itr = sm_unused_containers; itr != 0x0; itr = itr->next_unused){
+		printf("Current Unused Memeory %p->",itr->data);
+
+	}*/
+}
+void unusedMerge(){
+
+	sm_container_ptr itr;
+	sm_container_ptr prev;
+	for(itr =sm_first ; itr->next!=0x0 ; itr = itr->next){
+		if(itr->status == Unused && itr->next->status == Unused){
+			itr->dsize = itr->dsize +  itr->next->dsize;
+
+			if(itr->next->next != 0x0){
+			prev = itr->next;
+			itr->next = itr->next->next;
+			prev->next = itr->next;
+			}
+			else if( itr->next->next == 0x0){
+			itr->next = 0x0;
+			break;
+			}
+			
+			
+		}	
 
 	}
-//	for(itr = sm_unused_containers; itr->next_unused != 0x0; itr = itr->next_unused){
-
-		printf("%p->",itr->data);
-
-//}
+	
+	unusedLink();
 }
-
 void sfree(void * p)
 {
 	sm_container_ptr itr ;
@@ -134,7 +157,9 @@ void sfree(void * p)
 			itr->status = Unused ;
 			break ;
 		}
+	
 	}
+	unusedMerge();
 }
 
 void print_sm_containers()
@@ -180,5 +205,9 @@ void print_sm_uses(){
 	snprintf(buffer,100,"Total Amount of memory retained but not allocated(Unused) = %d\n",unused);
 	fputs(buffer,stderr);
 	
+	printf("List of Unused Memory\n");
+	for(itr = sm_unused_containers; itr != 0x0; itr = itr->next_unused){
+                printf("Adress -> %p, Size -> %d\n",itr->data,(int)itr->dsize);
+	}
 
 }
